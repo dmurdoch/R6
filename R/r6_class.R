@@ -122,6 +122,12 @@
 #'   and change the locked state of the class.
 #' @param cloneable If \code{TRUE} (the default), the generated objects will
 #'   have method named \code{$clone}, which makes a copy of the object.
+#'@param debugable If \code{TRUE} (the default is \code{FALSE}), the generated
+#'  objects will have a method named \code{$setBreakpoint}, which allows a
+#'  breakpoint to be set in individual instances using
+#'  \code{instance$setBreakpoint(...)}.  The \code{$setBreakpoint()} method is
+#'  always defined on the generator.
+#'
 #' @param lock Deprecated as of version 2.1; use \code{lock_class} instead.
 #' @examples
 #' # A queue ---------------------------------------------------------
@@ -470,6 +476,7 @@ R6Class <- encapsulate(function(classname = NULL, public = list(),
                                 inherit = NULL, lock_objects = TRUE,
                                 class = TRUE, portable = TRUE,
                                 lock_class = FALSE, cloneable = TRUE,
+                                debugable = FALSE,
                                 parent_env = parent.frame(), lock) {
 
   if (!all_named(public) || !all_named(private) || !all_named(active))
@@ -527,6 +534,9 @@ R6Class <- encapsulate(function(classname = NULL, public = list(),
 
   if (cloneable)
     generator$public_methods$clone <- generator_funs$clone_method
+
+  if (debugable)
+    generator$public_methods$setBreakpoint <- generator_funs$setBreakpoint
 
   # Capture the unevaluated expression for the superclass; when evaluated in
   # the parent_env, it should return the superclass object.
