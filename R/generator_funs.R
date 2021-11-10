@@ -101,3 +101,42 @@ generator_funs$unlock <- function() {
 generator_funs$is_locked <- function() {
   lock_class
 }
+
+# Set a breakpoint at a source location. This will apply to all objects
+# instantiated after this is called.
+generator_funs$setBreakpoint <- function(srcfile, line, nameonly = TRUE, verbose = FALSE, tracer, print = FALSE, clear = FALSE, ...) {
+  if (missing(tracer))
+    tracer <- quote(browser())
+  if (inherits(self, "R6ClassGenerator"))
+    lists <- c("public_methods", "private_methods", "active")
+  else
+    lists <- list(NULL)
+  for (listname in lists) {
+    if (is.null(listname))
+      env <- self
+    else {
+      list <- self[[listname]]
+      if (is.null(list))
+        next
+      env <- list2env(list, parent = emptyenv())
+    }
+    hits <- findLineNum(srcfile, line, nameonly = nameonly,                            envir = env)
+    if (verbose && length(hits)) {
+      print(hits, steps = !clear)
+    }
+    lapply(hits, function(hit) {
+      if (!clear)
+        trace(hit$name,
+              at = hit$at,
+              where = env,
+              print = print,
+              tracer = tracer,
+              ...)
+      else
+        untrace(hit$name, where = env)
+      if (!is.null(listname))
+        self[[listname]][[hit$name]] <- env[[hit$name]]
+    })
+  }
+  invisible(NULL)
+}
